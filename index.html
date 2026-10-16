@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reels Audit — Ирина OS</title>
-<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<title>Reels Audit — Анализ рилсов</title>
 <style>
 :root {
   --bg: #0d1117;
@@ -16,7 +15,6 @@
   --green: #3fb950;
   --red: #f85149;
   --blue: #388bfd;
-  --purple: #a371f7;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -25,416 +23,238 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   line-height: 1.6;
   padding: 24px;
+  min-height: 100vh;
 }
-.container { max-width: 1200px; margin: 0 auto; }
-h1 { font-size: 28px; margin-bottom: 8px; }
-h2 { font-size: 20px; margin: 24px 0 12px; color: var(--accent); }
-h3 { font-size: 16px; margin: 16px 0 8px; color: var(--blue); }
-.subtitle { color: var(--muted); margin-bottom: 24px; }
+.container { max-width: 800px; margin: 0 auto; }
+h1 { font-size: 28px; margin-bottom: 8px; color: var(--accent); }
+.subtitle { color: var(--muted); margin-bottom: 32px; }
 .card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 16px;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
 }
-.input-group { margin-bottom: 16px; }
-label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 14px; }
-input, textarea, select {
+input[type="url"] {
   width: 100%;
-  padding: 10px 12px;
+  padding: 14px 16px;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--text);
-  font-size: 14px;
+  font-size: 16px;
+  margin-bottom: 12px;
 }
-textarea { min-height: 120px; resize: vertical; }
+input[type="url"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(240,136,62,0.15);
+}
 .btn {
   background: var(--accent);
   color: #000;
   border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
+  padding: 14px 28px;
+  border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  width: 100%;
 }
-.btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(240,136,62,0.3); }
+.btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(240,136,62,0.3); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.reel-input {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 16px;
-  margin-bottom: 12px;
+.btn.loading { position: relative; color: transparent; }
+.btn.loading::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  top: 50%;
+  left: 50%;
+  margin-left: -10px;
+  margin-top: -10px;
+  border: 2px solid #000;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
-.reel-input .row { display: flex; gap: 12px; margin-bottom: 8px; }
-.reel-input .row > div { flex: 1; }
-.reel-input input { padding: 8px; }
-.result-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 16px;
+@keyframes spin { to { transform: rotate(360deg); } }
+.result {
+  display: none;
+  animation: fadeIn 0.3s ease;
 }
+.result.show { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .metric-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
-  margin: 16px 0;
+  margin: 20px 0;
 }
 .metric {
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 16px;
+  border-radius: 8px;
+  padding: 20px;
   text-align: center;
 }
-.metric .value { font-size: 32px; font-weight: 700; color: var(--accent); }
-.metric .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
-.badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
+.metric .value {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 4px;
 }
-.badge-green { background: rgba(63,185,80,0.2); color: var(--green); }
-.badge-red { background: rgba(248,81,73,0.2); color: var(--red); }
-.badge-blue { background: rgba(56,139,253,0.2); color: var(--blue); }
-.badge-orange { background: rgba(240,136,62,0.2); color: var(--accent); }
-.table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-.table th, .table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
-.table th { color: var(--muted); font-weight: 500; }
-.table tr:hover { background: rgba(48,54,61,0.3); }
-.progress-bar {
-  height: 8px;
+.metric .label {
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.hook-box {
   background: var(--bg);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-top: 8px;
+  border-left: 3px solid var(--accent);
+  padding: 16px;
+  border-radius: 0 8px 8px 0;
+  margin-top: 16px;
+  font-style: italic;
+  color: var(--text);
 }
-.progress-bar .fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
-.hook-list { list-style: none; }
-.hook-list li {
+.error {
+  background: rgba(248,81,73,0.1);
+  border: 1px solid var(--red);
+  color: var(--red);
+  padding: 16px;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+.loading-text {
+  text-align: center;
+  color: var(--muted);
+  padding: 40px;
+}
+.example {
+  margin-top: 16px;
   padding: 12px;
   background: var(--bg);
-  border: 1px solid var(--border);
   border-radius: 6px;
-  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--muted);
 }
-.hook-list li .number {
-  display: inline-block;
-  width: 24px;
-  height: 24px;
-  background: var(--accent);
-  color: #000;
-  border-radius: 50%;
-  text-align: center;
-  line-height: 24px;
-  font-size: 12px;
-  font-weight: 700;
-  margin-right: 12px;
+.example a {
+  color: var(--blue);
+  cursor: pointer;
+  text-decoration: underline;
 }
-.hidden { display: none; }
-#loading { text-align: center; padding: 40px; color: var(--muted); }
-.spinner {
-  display: inline-block;
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.chart-container { width: 100%; height: 300px; margin: 16px 0; }
 </style>
 </head>
 <body>
 <div class="container">
   <h1>🎬 Reels Audit</h1>
-  <p class="subtitle">13 измерений · 50+ рилсов · OCR + Транскрипты · Engagement-bait · Outliers</p>
+  <p class="subtitle">Вставь ссылку на Instagram Reel — получи лайки, комменты, просмотры</p>
 
-  <!-- Форма ввода -->
-  <div class="card" id="input-section">
-    <h2>📥 Ввод рилсов</h2>
-    <div class="input-group">
-      <label>Ниша / Оффер (одной строкой)</label>
-      <input type="text" id="niche" placeholder="ниша: заработок на YouTube через безликие каналы; продаём обучение" value="ниша: заработок на зарубежном YouTube через безликие/ИИ каналы; продаём обучение">
+  <div class="card">
+    <input type="url" id="reelUrl" placeholder="https://www.instagram.com/reel/ABC123DEF/" />
+    <button class="btn" id="analyzeBtn" onclick="analyze()">Анализировать</button>
+    <div class="example">
+      Попробуй: <a onclick="document.getElementById('reelUrl').value='https://www.instagram.com/reel/C0xample123/'; analyze()">пример ссылки</a>
     </div>
-    <div id="reel-inputs">
-      <div class="reel-input">
-        <div class="row">
-          <div><label>Код рилса</label><input type="text" class="reel-code" placeholder="C_nb9yho-_s"></div>
-          <div><label>Лайки</label><input type="number" class="reel-likes" placeholder="50987"></div>
-          <div><label>Комменты</label><input type="number" class="reel-comments" placeholder="15238"></div>
-          <div><label>Просмотры</label><input type="number" class="reel-views" placeholder="1300000"></div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="card">
+      <h2 style="color: var(--accent); margin-bottom: 16px;">📊 Результаты</h2>
+      <div class="metric-grid">
+        <div class="metric">
+          <div class="value" id="likes">—</div>
+          <div class="label">❤️ Лайки</div>
         </div>
-        <div><label>Транскрипт / Текст</label><textarea class="reel-text" placeholder="Текст рилса..."></textarea></div>
+        <div class="metric">
+          <div class="value" id="comments">—</div>
+          <div class="label">💬 Комменты</div>
+        </div>
+        <div class="metric">
+          <div class="value" id="views">—</div>
+          <div class="label">👁 Просмотры</div>
+        </div>
       </div>
+      <div class="hook-box" id="hookBox" style="display:none;">
+        <strong>Хук:</strong> <span id="hookText"></span>
+      </div>
+      <div style="margin-top: 16px; color: var(--muted); font-size: 14px;" id="dateText"></div>
     </div>
-    <button class="btn" onclick="addReel()">+ Добавить рилс</button>
-    <button class="btn" onclick="runAudit()" style="margin-left:12px;background:var(--green);color:#000;">🚀 Запустить аудит</button>
   </div>
 
-  <!-- Загрузка -->
-  <div id="loading" class="hidden">
-    <div class="spinner"></div>
-    <p style="margin-top:16px;">Анализирую рилсы...</p>
+  <div class="loading-text" id="loading" style="display:none;">
+    ⏳ Анализирую рилс...
   </div>
 
-  <!-- Результаты -->
-  <div id="results" class="hidden">
-    <h2>📊 Результаты аудита</h2>
-
-    <!-- Сводка -->
-    <div class="result-card">
-      <h3>Сводка</h3>
-      <div class="metric-grid">
-        <div class="metric"><div class="value" id="total-reels">0</div><div class="label">Рилсов</div></div>
-        <div class="metric"><div class="value" id="avg-virality">×0</div><div class="label">Средняя виральность</div></div>
-        <div class="metric"><div class="value" id="avg-engagement">0%</div><div class="label">Вовлечённость</div></div>
-        <div class="metric"><div class="value" id="bait-count">0</div><div class="label">Engagement-bait</div></div>
-      </div>
-    </div>
-
-    <!-- 13 измерений -->
-    <div class="result-card">
-      <h3>13 измерений</h3>
-      <div class="metric-grid">
-        <div class="metric"><div class="value" id="m-hook">0</div><div class="label">Хук /5</div></div>
-        <div class="metric"><div class="value" id="m-pacing">0</div><div class="label">Темп /5</div></div>
-        <div class="metric"><div class="value" id="m-loop">0</div><div class="label">Loop /5</div></div>
-        <div class="metric"><div class="value" id="m-velocity">0</div><div class="label">Velocity /5</div></div>
-        <div class="metric"><div class="value" id="m-berger">0</div><div class="label">Berger /5</div></div>
-        <div class="metric"><div class="value" id="m-quality">0</div><div class="label">Quality /6</div></div>
-        <div class="metric"><div class="value" id="m-outliers">0</div><div class="label">Outliers</div></div>
-      </div>
-    </div>
-
-    <!-- Топ-10 -->
-    <div class="result-card">
-      <h3>🏆 Топ-10 по виральности</h3>
-      <table class="table">
-        <thead><tr><th>#</th><th>Рилс</th><th>Виральность</th><th>Лайки</th><th>Комменты</th><th>Хук</th><th>Статус</th></tr></thead>
-        <tbody id="top10-body"></tbody>
-      </table>
-    </div>
-
-    <!-- Engagement-bait -->
-    <div class="result-card">
-      <h3>⚠️ Engagement-bait рилсы</h3>
-      <table class="table">
-        <thead><tr><th>Рилс</th><th>Комменты/Лайки</th><th>Вердикт</th></tr></thead>
-        <tbody id="bait-body"></tbody>
-      </table>
-    </div>
-
-    <!-- Outliers -->
-    <div class="result-card">
-      <h3>🎯 Outliers (аномально успешные)</h3>
-      <table class="table">
-        <thead><tr><th>Рилс</th><th>Виральность</th><th>Среднее автора</th><th>Статус</th></tr></thead>
-        <tbody id="outlier-body"></tbody>
-      </table>
-    </div>
-
-    <!-- График -->
-    <div class="result-card">
-      <h3>📈 Виральность по рилсам</h3>
-      <div id="virality-chart" class="chart-container"></div>
-    </div>
-
-    <!-- Генератор хуков -->
-    <div class="result-card">
-      <h3>🎣 Генератор хуков</h3>
-      <p style="color:var(--muted);margin-bottom:12px;">На основе аудита — 5 мощных хуков для вашей ниши:</p>
-      <ul class="hook-list" id="hook-list"></ul>
-    </div>
-  </div>
+  <div class="error" id="error" style="display:none;"></div>
 </div>
 
 <script>
-let reelCount = 1;
+// URL Cloudflare Worker
+const WORKER_URL = 'https://reels-audit-worker.iralinskiy777.workers.dev';
 
-function addReel() {
-  reelCount++;
-  const div = document.createElement('div');
-  div.className = 'reel-input';
-  div.innerHTML = `
-    <div class="row">
-      <div><label>Код рилса</label><input type="text" class="reel-code" placeholder="Код ${reelCount}"></div>
-      <div><label>Лайки</label><input type="number" class="reel-likes" placeholder="0"></div>
-      <div><label>Комменты</label><input type="number" class="reel-comments" placeholder="0"></div>
-      <div><label>Просмотры</label><input type="number" class="reel-views" placeholder="0"></div>
-    </div>
-    <div><label>Транскрипт / Текст</label><textarea class="reel-text" placeholder="Текст рилса..."></textarea></div>
-  `;
-  document.getElementById('reel-inputs').appendChild(div);
-}
+async function analyze() {
+  const url = document.getElementById('reelUrl').value.trim();
+  const btn = document.getElementById('analyzeBtn');
+  const result = document.getElementById('result');
+  const loading = document.getElementById('loading');
+  const error = document.getElementById('error');
 
-function runAudit() {
-  const reels = [];
-  document.querySelectorAll('.reel-input').forEach(el => {
-    const code = el.querySelector('.reel-code').value || `reel_${reelCount}`;
-    const likes = parseInt(el.querySelector('.reel-likes').value) || 0;
-    const comments = parseInt(el.querySelector('.reel-comments').value) || 0;
-    const views = parseInt(el.querySelector('.reel-views').value) || 0;
-    const text = el.querySelector('.reel-text').value || '';
-    if (text) reels.push({ code, likes, comments, views, transcript: text });
-  });
-
-  if (reels.length === 0) {
-    alert('Добавьте хотя бы один рилс с текстом');
+  if (!url) {
+    showError('Вставь ссылку на Instagram Reel');
     return;
   }
 
-  document.getElementById('loading').classList.remove('hidden');
-  document.getElementById('results').classList.add('hidden');
+  btn.disabled = true;
+  btn.classList.add('loading');
+  result.classList.remove('show');
+  error.style.display = 'none';
+  loading.style.display = 'block';
 
-  // Анализ (локальный JavaScript)
-  setTimeout(() => {
-    analyzeReels(reels);
-    document.getElementById('loading').classList.add('hidden');
-    document.getElementById('results').classList.remove('hidden');
-  }, 1500);
+  try {
+    const resp = await fetch(`${WORKER_URL}?url=${encodeURIComponent(url)}`);
+    const data = await resp.json();
+
+    if (data.error) {
+      showError(data.error);
+      return;
+    }
+
+    document.getElementById('likes').textContent = data.likes?.toLocaleString('ru') || '—';
+    document.getElementById('comments').textContent = data.comments?.toLocaleString('ru') || '—';
+    document.getElementById('views').textContent = data.views?.toLocaleString('ru') || '—';
+    document.getElementById('dateText').textContent = data.date ? `📅 ${data.date}` : '';
+
+    if (data.hook) {
+      document.getElementById('hookBox').style.display = 'block';
+      document.getElementById('hookText').textContent = data.hook;
+    } else {
+      document.getElementById('hookBox').style.display = 'none';
+    }
+
+    result.classList.add('show');
+  } catch (e) {
+    showError('Ошибка: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    loading.style.display = 'none';
+  }
 }
 
-function analyzeReels(reels) {
-  // 1. Engagement-bait
-  const bait = reels.filter(r => r.likes > 0 && (r.comments / r.likes) > 0.35);
-
-  // 2. Хук
-  const hookScores = reels.map(r => {
-    const text = (r.transcript || '').toLowerCase();
-    let score = 0;
-    if (text.match(/что|как|почему|секрет|не знал/)) score++;
-    if (text.match(/результат|итог|получилось/)) score++;
-    if (text.match(/я|мне|мой/)) score++;
-    if (text.match(/миллионы|тысячи|все/)) score++;
-    return { ...r, hookScore: Math.min(5, score + 1) };
-  });
-
-  // 3. Темп
-  const pacingScores = reels.map(r => {
-    const words = (r.transcript || '').split(/\s+/).length;
-    return { ...r, pacingScore: Math.min(5, Math.ceil(words / 20)) };
-  });
-
-  // 4. Loop
-  const loopScores = reels.map(r => {
-    const text = (r.transcript || '').toLowerCase();
-    const hasLoop = text.match(/но|а что|если|когда|дальше|потом/);
-    return { ...r, loopScore: hasLoop ? 4 : 2 };
-  });
-
-  // 5. Berger
-  const bergerScores = reels.map(r => {
-    const text = (r.transcript || '').toLowerCase();
-    let score = 0;
-    if (text.match(/секрет|эксклюзив/)) score++;
-    if (text.match(/сейчас|сегодня|прямо сейчас/)) score++;
-    if (text.match(/шок|удив|невероятно/)) score++;
-    if (text.match(/как|способ|метод/)) score++;
-    return { ...r, bergerScore: Math.min(5, score + 1) };
-  });
-
-  // 6. Quality
-  const qualityScores = reels.map(r => {
-    const text = (r.transcript || '').toLowerCase();
-    let score = 0;
-    if (text.match(/что|как|почему/)) score++;
-    if (text.match(/но|а потом|в итоге/)) score++;
-    if (text.match(/напиши|подпишись|ссылка/)) score++;
-    if (text.match(/заработок|youtube|канал/)) score++;
-    return { ...r, qualityScore: Math.min(6, score) };
-  });
-
-  // Виральность
-  const virality = reels.map(r => {
-    const avgLikes = reels.reduce((s, x) => s + x.likes, 0) / reels.length;
-    return r.likes > 0 ? (r.likes / avgLikes) : 0;
-  });
-
-  // Outliers
-  const outliers = reels.filter((r, i) => virality[i] > 2);
-
-  // Сводка
-  document.getElementById('total-reels').textContent = reels.length;
-  document.getElementById('avg-virality').textContent = '×' + (virality.reduce((a, b) => a + b, 0) / virality.length).toFixed(1);
-  document.getElementById('avg-engagement').textContent = (reels.reduce((s, r) => s + (r.likes > 0 ? r.comments / r.likes : 0), 0) / reels.length * 100).toFixed(1) + '%';
-  document.getElementById('bait-count').textContent = bait.length;
-
-  // 13 测量ений
-  document.getElementById('m-hook').textContent = (hookScores.reduce((s, r) => s + r.hookScore, 0) / reels.length).toFixed(1);
-  document.getElementById('m-pacing').textContent = (pacingScores.reduce((s, r) => s + r.pacingScore, 0) / reels.length).toFixed(1);
-  document.getElementById('m-loop').textContent = (loopScores.reduce((s, r) => s + r.loopScore, 0) / reels.length).toFixed(1);
-  document.getElementById('m-velocity').textContent = (bait.length / reels.length * 5).toFixed(1);
-  document.getElementById('m-berger').textContent = (bergerScores.reduce((s, r) => s + r.bergerScore, 0) / reels.length).toFixed(1);
-  document.getElementById('m-quality').textContent = (qualityScores.reduce((s, r) => s + r.qualityScore, 0) / reels.length).toFixed(1);
-  document.getElementById('m-outliers').textContent = outliers.length;
-
-  // Топ-10
-  const top10Body = document.getElementById('top10-body');
-  top10Body.innerHTML = '';
-  const sorted = [...reels].sort((a, b) => b.likes - a.likes).slice(0, 10);
-  sorted.forEach((r, i) => {
-    const isBait = bait.includes(r);
-    const isOutlier = outliers.includes(r);
-    const status = isBait ? '<span class="badge badge-red">BAIT</span>' : isOutlier ? '<span class="badge badge-orange">OUTLIER</span>' : '<span class="badge badge-green">OK</span>';
-    top10Body.innerHTML += `<tr><td>${i+1}</td><td>${r.code}</td><td>×${virality[reels.indexOf(r)].toFixed(1)}</td><td>${r.likes.toLocaleString()}</td><td>${r.comments.toLocaleString()}</td><td>${hookScores[reels.indexOf(r)].hookScore}/5</td><td>${status}</td></tr>`;
-  });
-
-  // Engagement-bait
-  const baitBody = document.getElementById('bait-body');
-  baitBody.innerHTML = '';
-  bait.forEach(r => {
-    baitBody.innerHTML += `<tr><td>${r.code}</td><td>${(r.comments / r.likes * 100).toFixed(1)}%</td><td><span class="badge badge-red">BAIT</span></td></tr>`;
-  });
-
-  // Outliers
-  const outlierBody = document.getElementById('outlier-body');
-  outlierBody.innerHTML = '';
-  outliers.forEach(r => {
-    const avgVir = virality.reduce((a, b) => a + b, 0) / virality.length;
-    outlierBody.innerHTML += `<tr><td>${r.code}</td><td>×${virality[reels.indexOf(r)].toFixed(1)}</td><td>×${avgVir.toFixed(1)}</td><td><span class="badge badge-orange">OUTLIER</span></td></tr>`;
-  });
-
-  // График
-  const trace = {
-    x: reels.map(r => r.code.substring(0, 8)),
-    y: virality.map(v => v.toFixed(2)),
-    type: 'bar',
-    marker: { color: virality.map(v => v > 2 ? '#f0883e' : '#388bfd') }
-  };
-  Plotly.newPlot('virality-chart', [trace], {
-    paper_bgcolor: 'rgba(0,0,0,0)',
-    plot_bgcolor: 'rgba(0,0,0,0)',
-    font: { color: '#7d8590', size: 11 },
-    margin: { t: 20, b: 40, l: 40, r: 20 },
-    yaxis: { title: 'Виральность (×)', gridcolor: '#30363d' },
-    xaxis: { title: 'Рилс' }
-  }, { responsive: true });
-
-  // Генератор хуков
-  const hookList = document.getElementById('hook-list');
-  hookList.innerHTML = '';
-  const topHooks = [...reels].sort((a, b) => b.likes - a.likes).slice(0, 3);
-  const hookTemplates = [
-    `Ты станешь тем самым другом, который исчезает на неделю и возвращается с парой тысяч долларов в кармане.`,
-    `Я покажу тебе, как создать канал, который приносит доход без лица и без опыта — прямо сейчас.`,
-    `Это видео посмотрели миллионы, и люди делают на этом бизнес. Давайте покажу, как повторить.`,
-    `В это правда страшно поверить, но такой канал набрал 28 миллионов подписчиков за пару месяцев.`,
-    `Я удалю это видео через 24 часа, потому что сейчас расскажу, как бросить свою работу и зарабатывать на YouTube.`
-  ];
-  hookTemplates.forEach((hook, i) => {
-    hookList.innerHTML += `<li><span class="number">${i+1}</span>${hook}</li>`;
-  });
+function showError(msg) {
+  const error = document.getElementById('error');
+  error.textContent = '❌ ' + msg;
+  error.style.display = 'block';
 }
+
+// Enter key
+document.getElementById('reelUrl').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') analyze();
+});
 </script>
 </body>
 </html>
