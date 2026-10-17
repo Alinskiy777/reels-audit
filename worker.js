@@ -1,32 +1,44 @@
 // Cloudflare Worker — Instagram Reels Proxy
 // Принимает ссылку на Reel, возвращает данные (лайки, комменты, просмотры)
-// 🔴 ВАЖНО: sessionid захардкожен — это проблема безопасности!
-// Нужно перенести в переменные окружения Cloudflare Worker
-
-const IG_SESSION = '22935044283%3AnaGi5wHHNfhj3J%3A14%3AAYkp07p4hjYMWsVsKQd76T68mIV0QpZKciYGXHucyA';
+// 🔴 ВАЖНО: sessionid должен быть в переменных окружения Cloudflare Worker!
+// Настройка: Cloudflare Dashboard → Workers & Pages → reels-audit-worker → Settings → Variables
 
 // Валидация URL
 function isValidInstagramUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  if (url.length > 2048) return false; // Максимальная длина URL
   try {
     const u = new URL(url);
-    return u.hostname === 'www.instagram.com' || u.hostname === 'instagram.com';
+    return (u.hostname === 'www.instagram.com' || u.hostname === 'instagram.com') 
+           && u.pathname.includes('/reel/');
   } catch {
     return false;
   }
 }
 
-async function fetchReelData(url) {
+// Извлечение shortcode из URL
+function extractShortcode(url) {
+  const match = url.match(/\/reel\/([A-Za-z0-9_-]+)/);
+  return match ? match[1] : null;
+}
+
+async function fetchReelData(url, env) {
   // Валидация URL
   if (!isValidInstagramUrl(url)) {
     return { error: 'Некорректная ссылка. Нужна ссылка на Instagram Reel (https://www.instagram.com/reel/...)' };
   }
 
-  // Извлекаем shortcode из URL
-  const match = url.match(/\/reel\/([A-Za-z0-9_-]+)/);
-  if (!match) {
+  // Извлекаем shortcode
+  const shortcode = extractShortcode(url);
+  if (!shortcode) {
     return { error: 'Не могу найти shortcode в ссылке' };
   }
-  const shortcode = match[1];
+
+  // Проверяем что sessionid настроен
+  const IG_SESSION = env?.IG_SESSION || '';
+  if (!IG_SESSION) {
+    return { error: 'Ошибка конфигурации: Instagram sessionid не настроен' };
+  }
 
   // Запрашиваем страницу Reel с таймаутом
   const controller = new AbortController();
@@ -99,10 +111,10 @@ function parseCount(s) {
 }
 
 addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request))
+  event.respondWith(handleRequest(event.request, event.env))
 })
 
-async function handleRequest(request) {
+async function handleRequest(request, env) {
   const url = new URL(request.url);
   const reelUrl = url.searchParams.get('url');
 
@@ -114,7 +126,7 @@ async function handleRequest(request) {
   }
 
   try {
-    const data = await fetchReelData(reelUrl);
+    const data = await fetchReelData(reelUrl, env);
     return new Response(JSON.stringify(data), {
       headers: {
         'Content-Type': 'application/json',

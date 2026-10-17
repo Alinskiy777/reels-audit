@@ -252,6 +252,8 @@ const WORKER_URL = 'https://reels-audit-worker.iralinskiy777.workers.dev';
 
 // Валидация URL
 function isValidInstagramUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  if (url.length > 2048) return false; // Максимальная длина URL
   try {
     const u = new URL(url);
     return (u.hostname === 'www.instagram.com' || u.hostname === 'instagram.com') 
@@ -259,6 +261,11 @@ function isValidInstagramUrl(url) {
   } catch {
     return false;
   }
+}
+
+// Проверка на спецсимволы (XSS защита)
+function hasNoSpecialChars(url) {
+  return !/[<>\"'&]/.test(url);
 }
 
 async function analyze() {
@@ -276,6 +283,12 @@ async function analyze() {
   // Валидация URL
   if (!isValidInstagramUrl(url)) {
     showError('Некорректная ссылка. Нужна ссылка на Instagram Reel (https://www.instagram.com/reel/...)');
+    return;
+  }
+
+  // Проверка на спецсимволы (XSS защита)
+  if (!hasNoSpecialChars(url)) {
+    showError('URL содержит недопустимые символы');
     return;
   }
 
