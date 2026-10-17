@@ -250,6 +250,17 @@ input[type="url"]:focus {
 // URL Cloudflare Worker
 const WORKER_URL = 'https://reels-audit-worker.iralinskiy777.workers.dev';
 
+// Валидация URL
+function isValidInstagramUrl(url) {
+  try {
+    const u = new URL(url);
+    return (u.hostname === 'www.instagram.com' || u.hostname === 'instagram.com') 
+           && u.pathname.includes('/reel/');
+  } catch {
+    return false;
+  }
+}
+
 async function analyze() {
   const url = document.getElementById('reelUrl').value.trim();
   const btn = document.getElementById('analyzeBtn');
@@ -262,6 +273,12 @@ async function analyze() {
     return;
   }
 
+  // Валидация URL
+  if (!isValidInstagramUrl(url)) {
+    showError('Некорректная ссылка. Нужна ссылка на Instagram Reel (https://www.instagram.com/reel/...)');
+    return;
+  }
+
   btn.disabled = true;
   btn.classList.add('loading');
   result.classList.remove('show');
@@ -269,8 +286,29 @@ async function analyze() {
   loading.style.display = 'block';
 
   try {
-    const resp = await fetch(`${WORKER_URL}?url=${encodeURIComponent(url)}`);
+    // Таймаут 15 секунд
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const resp = await fetch(`${WORKER_URL}?url=${encodeURIComponent(url)}`, {
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    // Проверяем статус ответа
+    if (!resp.ok) {
+      showError(`Ошибка сервера: ${resp.status} ${resp.statusText}`);
+      return;
+    }
+
     const data = await resp.json();
+
+    // Проверяем что ответ не пустой
+    if (!data || Object.keys(data).length === 0) {
+      showError('Пустой ответ от сервера');
+      return;
+    }
 
     if (data.error) {
       showError(data.error);
@@ -291,7 +329,11 @@ async function analyze() {
 
     result.classList.add('show');
   } catch (e) {
-    showError('Ошибка: ' + e.message);
+    if (e.name === 'AbortError') {
+      showError('Таймаут: сервер не ответил за 15 секунд');
+    } else {
+      showError('Ошибка: ' + e.message);
+    }
   } finally {
     btn.disabled = false;
     btn.classList.remove('loading');
